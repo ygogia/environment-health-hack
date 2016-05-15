@@ -1,5 +1,6 @@
 var express = require('express');
 var userController = require('../controllers/user.js');
+var aqiController = require('../controllers/aqi.js');
 var router = express.Router();
 
 router.get('/', function(req, res, next) {
@@ -14,5 +15,10 @@ router.route('/updateUser')
 
 router.route('/user/:username')
   .get(userController.getUser);
+
+
+router.route('/getAQI/:username')
+  .get(aqiController.getAQI);
+
 
 module.exports = router;
