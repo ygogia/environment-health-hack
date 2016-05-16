@@ -11,7 +11,9 @@ exports.getAQI = function(req, res) {
     	var home_address = user.homeAddress.latitude + ',' + user.workAddress.longitude;
 
     	var work_temp = 0, home_temp = 0, temperature=0;
-    	console.log("Average temperature: " + temperature);
+    	var final_score = {'O3': 0.0, 'PM2.5': 0.0, 'PM10': 0.0};
+    	var count = {'O3': 0.0, 'PM2.5': 0.0, 'PM10': 0.0};
+    	var score = 0;
     	// get temperature of source address
 
     	request(
@@ -107,18 +109,26 @@ exports.getAQI = function(req, res) {
     						}
     						//console.log("POINTS: ", i, points);
     		
-  							 //console.log(body1[0]);
-  							//console.log("INDEX: " + index);
    							for(var j=0;j<body1.length;j++)
    							{
     							console.log(body1[j].ParameterName + ': ' + body1[j].AQI);
     							points[index][body1[j].ParameterName] = body1[j].AQI;
+    							final_score[body1[j].ParameterName] += body1[j]['AQI'];
+    							count[body1[j].ParameterName] += 1.0;
     						}
     						console.log('\n');
     						no_runs++;
     						if(no_runs == total_points)
     						{
-    							res.json({points: points, temperature: temperature});
+    							for(var category in final_score) { 
+    								final_score[category] /= count[category];
+    								final_score[category] = 500 - final_score[category];
+    								score += final_score[category];
+    							}
+    							score = score/3.0;
+    							score = score/50;
+    							console.log(final_score);
+    							res.json({points: points, temperature: temperature, score: score});
     						}
 						});
 						})(i, points.length);   	
