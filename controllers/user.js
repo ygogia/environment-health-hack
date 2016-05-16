@@ -41,6 +41,16 @@ exports.getUser = function(req, res) {
     res.json(user);
   });
 };
+exports.login = function(req, res) {
+  User.findOne({'username':req.body.username,'password':req.body.password}, function(err, user) {
+    if (err)
+      res.send(err);
+  	if(!user)
+  	  res.json({isSuccess:false,message:'Invalid Username/password'});
+  	if(user)
+  	  res.json({isSuccess:true,message:'Login Successful',user:user});
+  });
+};
 
 exports.updateUser = function(req, res) {
 	User.findOne({'username':req.body.username},function(err,user){

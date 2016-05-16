@@ -16,9 +16,11 @@ router.route('/updateUser')
 router.route('/user/:username')
   .get(userController.getUser);
 
-
 router.route('/getAQI/:username')
   .get(aqiController.getAQI);
 
+module.exports = router;
+router.route('/user/login')
+  .post(userController.login);
 
 module.exports = router;
