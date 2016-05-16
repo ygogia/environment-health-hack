@@ -13,6 +13,7 @@ exports.getAQI = function(req, res) {
     	var work_temp = 0, home_temp = 0, temperature=0;
     	var final_score = {'O3': 0.0, 'PM2.5': 0.0, 'PM10': 0.0};
     	var count = {'O3': 0.0, 'PM2.5': 0.0, 'PM10': 0.0};
+    	var weight = {'O3': 0.1, 'PM2.5': 0.8, 'PM10': 0.1};
     	var score = 0;
     	// get temperature of source address
 
@@ -78,14 +79,16 @@ exports.getAQI = function(req, res) {
     				//All is good. Print the body
     				//console.log(body.routes[0].legs[0].steps); // Show the HTML for the Modulus homepage.
    
-			    	var routes = body.routes;
-    				var len = routes[0].legs[0].steps.length;
-    				var points = []; 
-    				for(var i=0;i<routes[0].legs[0].steps.length; i++) {
-    					points.push(routes[0].legs[0].steps[i].start_location);
-    				}
+			    	//var routes = body.routes;
+    				//var len = routes[0].legs[0].steps.length;
+    				var points = [];
+    				points.push({lat: user.homeAddress.latitude, lng: user.homeAddress.longitude}); 
+    				points.push({lat: user.workAddress.latitude, lng: user.workAddress.longitude}); 
+    				//for(var i=0;i<routes[0].legs[0].steps.length; i++) {
+    			//		points.push(routes[0].legs[0].steps[i].start_location);
+    			//	}
     
-    				points.push(routes[0].legs[0].steps[len-1].end_location);
+    				//points.push(routes[0].legs[0].steps[len-1].end_location);
     				console.log(points);
 
     				var no_runs = 0;
@@ -94,7 +97,7 @@ exports.getAQI = function(req, res) {
     					(function(index, total_points) {
     					request(
 						{
-							url: 'http://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude='+points[i].lat+'&longitude=' + points[i].lng + '&distance=25&API_KEY=7C645E62-6EA3-4293-B3EE-A5DD1E59302F',
+							url: 'http://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude='+points[i].lat+'&longitude=' + points[i].lng + '&distance=50&API_KEY=7C645E62-6EA3-4293-B3EE-A5DD1E59302F',
 							json: true
 						}, 
 						function (error1, response1, body1) {
@@ -108,14 +111,22 @@ exports.getAQI = function(req, res) {
         						return console.log('Invalid Status Code Returned:', response1.statusCode);
     						}
     						//console.log("POINTS: ", i, points);
-    		
+    						points[0]['temperature'] = home_temp;
+    							
+    						points[1]['temperature'] = work_temp;
+    							
+    						points[index]['score'] = 0;
    							for(var j=0;j<body1.length;j++)
    							{
     							console.log(body1[j].ParameterName + ': ' + body1[j].AQI);
     							points[index][body1[j].ParameterName] = body1[j].AQI;
+    							points[index]['score'] += weight[body1[j].ParameterName]*(500-body1[j]['AQI']);
     							final_score[body1[j].ParameterName] += body1[j]['AQI'];
     							count[body1[j].ParameterName] += 1.0;
     						}
+    						points[index]['score'] = points[index]['score']/50;
+    						if(points[index]['O3'] == undefined || points[index]['PM10'] == undefined || points[index]['PM2.5'] == undefined)
+    							points[index]['score'] = 0;
     						console.log('\n');
     						no_runs++;
     						if(no_runs == total_points)
@@ -141,3 +152,7 @@ exports.getAQI = function(req, res) {
 		console.log('\n');
 	});
 };
+
+process.on('uncaughtException', function(err) {
+  console.log('Caught exception: ' + err);
+});
